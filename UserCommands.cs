@@ -1,10 +1,13 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using System.Threading.Tasks;
 using System;
+using System.IO;
+using System.Linq;
 
-namespace RikuBot
+namespace OlafBot
 {
     class UserCommands : BaseCommandModule
     {
@@ -25,18 +28,37 @@ namespace RikuBot
         }
 
         [Command("sayd")]
-        public async Task sayd(CommandContext ctx, string Message, string DeletedMessage)
+        public async Task sayd(CommandContext ctx, string Message)
         {
             Message = ctx.Message.Content.Remove(0, 5);
 
-            Console.WriteLine("Message not deleted");
-
-            await ctx.Channel.DeleteMessageAsync(ctx.Message);
-
-            Console.WriteLine("Message deleted");
+            await ctx.Message.DeleteAsync();
 
             await ctx.Channel.SendMessageAsync(Message)
                 .ConfigureAwait(false);
+        }
+
+        [Command("scramble")]
+        public async Task scramble(CommandContext ctx)
+        {
+            string[] Names = { "Kyle", "Kito", "Utsu", "Gon" };
+
+            Random r = new Random();
+
+            int index = r.Next(Names.Length);
+
+            var interact = ctx.Client.GetInteractivity();
+
+            string word = Names[index];
+
+            string random = new string(word.ToCharArray().OrderBy(s => (r.Next(2) % 2) == 0).ToArray());
+
+            await ctx.Channel.SendMessageAsync(random)
+                .ConfigureAwait(false);
+
+            var correctWord = await interact.WaitForMessageAsync(x => x.Channel == ctx.Channel && x.Content == word);
+
+            await ctx.Channel.SendMessageAsync(correctWord.Result.Content + " is Right!");
         }
     }
 }
